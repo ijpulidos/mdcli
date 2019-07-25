@@ -7,6 +7,7 @@ residues in a PDB structure file.
 Requires BioPython>=1.74 and Modeller>=9.21.
 """
 
+import os
 import argparse
 import shutil
 
@@ -34,66 +35,99 @@ def insert_gap(aaindex, residue_list):
     residue_list.append((aaindex, "-"))
 
 
-def build_align_file(input_pdb, output_align_file, pdbcode):
+def get_chain_missing_res(missing_residues, chainID):
+    """
+    Function that returns a list of missing residues from a given chain identifier/letter.
+    """
+    result = [residue for residue in missing_residues if residue['chain'] == chainID]
+    return result
+
+
+def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
     """
     Function that takes a PDB filepath, detects missing residues and builds a MODELLER align file with this information,
     to be later used for completing residues.
     :param input_pdb: PDB filepath
-    :param output_align_file: Filepath for output align file.
     :param pdbcode: Code identifier for the PDB structure. Ex: 2y8d
+    :param output_align_file: Filepath for output align file.
     :return:
     """
 
     # Read structure and extract present and missing residues
     pdbparser = PDBParser()
     structure = pdbparser.get_structure(pdbcode, input_pdb)
-    residues = unfold_entities(structure, "R")
-    missing_residues = structure.header['missing_residues']
+    chains = unfold_entities(structure, "C")  # Get chains
 
-    residues_list = [(residue.id[1], seq1(residue.resname)) for residue in residues if residue.id[0]==" " ]
-    for mis_res in missing_residues:
-        insert_gap(mis_res['ssseq'], residues_list)
+    missing_residues = structure.header['missing_residues']  # Get missing residues from whole structure
 
-    cadena = "".join(np.array(residues_list)[:, 1])
+    # Remove alignment file if exists
+    try:
+        os.remove(output_align_file)
+    except FileNotFoundError:
+        pass
 
-    # Make the line width the correct/expected one for modeller align file
-    textwrap.wrap(cadena, width=75, break_on_hyphens=False)
+    # Where to store the sequences from structure separated by chains/index
+    whole_gapped = []
+    whole_full = []
 
-    full_seq = cadena
-    for mis_res in missing_residues:
-        full_seq = full_seq.replace("-", seq1(mis_res["res_name"]), 1)
+    for chain in chains:
+        chain_id = chain.get_id()
+        residues = unfold_entities(chain, "R")  # Get residues of chain
+        missing_res_chain = get_chain_missing_res(missing_residues, chain_id)
 
-    # For checking full_seq
-    # print(full_seq)
+        # Residues with empty id[0] are the 'real' residues, others are solvent or different.
+        residues_list = [(residue.id[1], seq1(residue.resname)) for residue in residues if residue.id[0] == " "]
+        for mis_res in missing_res_chain:
+            insert_gap(mis_res['ssseq'], residues_list)
 
-    # Writing to file (test)
+        # Sequence with gaps
+        gapped_seq = "".join(np.array(residues_list)[:, 1])
+        # Make the line width the correct/expected one for modeller align file
+        textwrap.wrap(gapped_seq, width=75, break_on_hyphens=False)
+
+        # Full sequence without gaps by replacing gaps with the missing res
+        full_seq = gapped_seq
+        for mis_res in missing_residues:
+            full_seq = full_seq.replace("-", seq1(mis_res["res_name"]), 1)
+
+        whole_gapped.append(gapped_seq)
+        whole_full.append(full_seq)
+
+        # For checking full_seq
+        # print(full_seq)
+
+    # Building whole strings to write to file. "/" char separates chains.
+    whole_gapped_str = "/".join(whole_gapped)
+    whole_full_str = "/".join(whole_full)
+
+    # Writing to file
     # Remember sequences have to end with the * character
-    with open(output_align_file, "w") as file:
-        # Writing structure section
+    with open(output_align_file, "a+") as file:
+        # Writing structure/gapped section
         file.write(">P1;" + structure.id + "\n")
-        file.write("structureX:" + structure.id + 8*':.' + "\n")
-        for line in textwrap.wrap(cadena+"*", width=75, break_on_hyphens=False):
+        file.write("structureX:" + structure.id + ":FIRST:@ END:@" + 5*':.' + "\n")
+        for line in textwrap.wrap(whole_gapped_str+"*", width=75, break_on_hyphens=False):
             file.write("%s\n" % line)
-        # Writing sequence section
+        # Writing full sequence section
         file.write(">P1;" + structure.id + "_fill\n")
-        file.write("sequence:" + structure.id + 8*':.' + "\n")
-        for line in textwrap.wrap(full_seq+"*", width=75, break_on_hyphens=False):
+        file.write("sequence:" + structure.id + ":FIRST:@ END:@" + 5*':.' + "\n")
+        for line in textwrap.wrap(whole_full_str+"*", width=75, break_on_hyphens=False):
             file.write("%s\n" % line)
 
 
-def complete_residues(code, align_file):
+def complete_residues(pdbcode, align_file="protein.ali"):
     """
     Function that completes residues based on an alignment file using MODELLER software.
-    :param code: PDB code identifier of the structure with missing residues.
+    :param pdbcode: PDB code identifier of the structure with missing residues.
     :param align_file: Path to the align-formatted file with gaps as missing residues.
     :return:
     """
     # Get the sequence of the coded PDB file, and write to an alignment file
     e = environ()
-    m = model(e, file=code)
+    m = model(e, file=pdbcode)
     aln = alignment(e)
-    aln.append_model(m, align_codes=code)
-    aln.write(file=code + '.seq')
+    aln.append_model(m, align_codes=pdbcode)
+    aln.write(file=pdbcode + '.seq')
 
     # Completing residues
     log.verbose()
@@ -102,15 +136,18 @@ def complete_residues(code, align_file):
     # directories for input atom files (local dir)
     env.io.atom_files_directory = ['.']
 
-    a = loopmodel(env, alnfile=align_file,
-                  knowns=code, sequence=code+'_fill')
+    a = automodel(env, alnfile=align_file,
+                  knowns=pdbcode, sequence=pdbcode + '_fill')
+
+    # For loop refinement - Doesn't always work
+    # a = loopmodel(env, alnfile=align_file,
+    #               knowns=pdbcode, sequence=code+'_fill')
+    # a.loop.starting_model = 1
+    # a.loop.ending_model = 2
+    # a.loop.md_level = refine.fast
 
     a.starting_model = 1
     a.ending_model = 1
-
-    a.loop.starting_model = 1
-    a.loop.ending_model = 2
-    a.loop.md_level = refine.fast
 
     a.make()
 
@@ -118,18 +155,23 @@ def complete_residues(code, align_file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Builds alignment file for MODELLER.")
     parser.add_argument('--input', '-i', type=str, help='Input PDB file with missing residues.', required=True)
-    parser.add_argument('--output', '-o', type=str, help='Output align (.ali) file for completing residues.',
-                        required=True)
     parser.add_argument('--pdbcode', type=str, help='PDB code identifier for the structure.',
                         required=True)
+    parser.add_argument('--output', '-o', type=str, help='(Optional) Output align (.ali) file for completing residues.',
+                        required=False, default="protein.ali")
 
     args = parser.parse_args()
-
-    build_align_file(args.input, args.output, args.pdbcode)
 
     # the PDB file has to be in the same directory, copying and using the code as name.
     pdb_path = args.input
     code = args.pdbcode
-    shutil.copy(pdb_path, "./"+code+".pdb")
+    print("input: " + os.path.abspath(args.input))
+    print("cwd: " + os.getcwd() + code + ".pdb")
+    if os.path.abspath(args.input) == os.getcwd() + "/" + code + ".pdb":
+        raise ValueError('Input file comes from current working directory and cannot have ' + code +
+                         '.pdb already as a name. Please change the name (or location) of input PDB file.')
+    else:
+        shutil.copy(pdb_path, "./" + code + ".pdb")
 
-    complete_residues(code, args.output)
+    build_align_file(args.input, args.pdbcode, output_align_file=args.output)
+    complete_residues(code, align_file=args.output)
