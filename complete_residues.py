@@ -117,11 +117,12 @@ def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
             file.write("%s\n" % line)
 
 
-def complete_residues(pdbcode, align_file="protein.ali"):
+def complete_residues(pdbcode, align_file="protein.ali", loop_ref=False):
     """
     Function that completes residues based on an alignment file using MODELLER software.
     :param pdbcode: PDB code identifier of the structure with missing residues.
     :param align_file: Path to the align-formatted file with gaps as missing residues.
+    :param loop_ref: (optional) Boolean for specifying loop refinement, doesn't always work.
     :return:
     """
     # Get the sequence of the coded PDB file, and write to an alignment file
@@ -138,15 +139,16 @@ def complete_residues(pdbcode, align_file="protein.ali"):
     # directories for input atom files (local dir)
     env.io.atom_files_directory = ['.']
 
-    a = automodel(env, alnfile=align_file,
-                  knowns=pdbcode, sequence=pdbcode + '_fill')
-
-    # For loop refinement - Doesn't always work
-    # a = loopmodel(env, alnfile=align_file,
-    #               knowns=pdbcode, sequence=code+'_fill')
-    # a.loop.starting_model = 1
-    # a.loop.ending_model = 2
-    # a.loop.md_level = refine.fast
+    if loop_ref:
+        # For loop refinement - Doesn't always work
+        a = loopmodel(env, alnfile=align_file,
+                      knowns=pdbcode, sequence=code+'_fill')
+        a.loop.starting_model = 1
+        a.loop.ending_model = 2
+        a.loop.md_level = refine.fast
+    else:
+        a = automodel(env, alnfile=align_file,
+                      knowns=pdbcode, sequence=pdbcode + '_fill')
 
     a.starting_model = 1
     a.ending_model = 1
@@ -161,6 +163,9 @@ if __name__ == "__main__":
                         required=True)
     parser.add_argument('--output', '-o', type=str, help='(Optional) Output align (.ali) file for completing residues.',
                         required=False, default="protein.ali")
+    parser.add_argument('--loop_ref', '-lr', type=bool, help='(Optional) True or False if you want loop refinement. '
+                                                             'Does not always work.',
+                        required=False, default=False)
 
     args = parser.parse_args()
 
@@ -176,4 +181,4 @@ if __name__ == "__main__":
         shutil.copy(pdb_path, "./" + code + ".pdb")
 
     build_align_file(args.input, args.pdbcode, output_align_file=args.output)
-    complete_residues(code, align_file=args.output)
+    complete_residues(code, align_file=args.output, loop_ref=args.loop_ref)
