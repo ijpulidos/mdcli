@@ -139,7 +139,7 @@ def complete_residues(pdbcode, align_file="protein.ali", loop_ref=False):
     # directories for input atom files (local dir)
     env.io.atom_files_directory = ['.']
 
-    if loop_ref:
+    if loop_ref is True:
         # For loop refinement - Doesn't always work
         a = loopmodel(env, alnfile=align_file,
                       knowns=pdbcode, sequence=code+'_fill')
@@ -163,9 +163,10 @@ if __name__ == "__main__":
                         required=True)
     parser.add_argument('--output', '-o', type=str, help='(Optional) Output align (.ali) file for completing residues.',
                         required=False, default="protein.ali")
-    parser.add_argument('--loop_ref', '-lr', type=bool, help='(Optional) True or False if you want loop refinement. '
+    parser.add_argument('--loop_ref', '-lr', dest='loop_ref', help='(Optional) Enables loop refinement. '
                                                              'Does not always work.',
-                        required=False, default=False)
+                        required=False, action='store_true')
+    parser.set_defaults(feature=True)
 
     args = parser.parse_args()
 
