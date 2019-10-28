@@ -97,9 +97,9 @@ cat ${HELICES} | awk '{print $6}' > helices.txt
 # make index file with helices indices
 rs=($(cat helices.txt)); { echo r ${rs[*]} ; echo q; } | gmx make_ndx -f ${STRUCTURE} -o helices.ndx
 # make index file with backbone of the helices
-printf "4\n18\nq\n" | gmx make_ndx -f ${STRUCTURE} -n helices.ndx -o bb_helices.ndx 
+printf "4 & 18\nq\n" | gmx make_ndx -f ${STRUCTURE} -n helices.ndx -o bb_helices.ndx 
 # compute covariance matrix
-printf "4\n18\nq\n" | gmx covar -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx
+printf "19\n19\nq\n" | gmx covar -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx
 # Analysis of first 3 eigenvalues
-printf "4\n18\nq\n" | gmx anaeig -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx -b 25000 -3d -first 1 -last 3 -extr -nframes 20
+printf "19\n19\nq\n" | gmx anaeig -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx -b 25000 -3d -first 1 -last 3 -extr -nframes 20
 cd ${basepath}
