@@ -5,6 +5,9 @@
 # It assumes there's already a pdb with the helices called helices.pdb
 # Expects command line argument for the directory where the helices.pdb file is located
 
+# Exit on error
+set -e
+
 # Understanding command line arguments
 # inspired by: https://stackoverflow.com/a/7069755
 while test $# -gt 0; do
@@ -88,12 +91,12 @@ done
 # Basepath is current working directory
 basepath=`pwd`
 
+# Make output dir if doesn't exist
+mkdir -p ${OUTPUT}
 cd ${OUTPUT}
-# creates PCA working directory
-mkdir PCA
-cd PCA
 # get indices from pdb file passed as argument for script
-cat ${HELICES} | awk '{print $6}' > helices.txt
+# Note: Sometimes the f**king column number changes... 
+cat ${HELICES} | awk '{print $5}' > helices.txt
 # make index file with helices indices
 rs=($(cat helices.txt)); { echo r ${rs[*]} ; echo q; } | gmx make_ndx -f ${STRUCTURE} -o helices.ndx
 # make index file with backbone of the helices
