@@ -93,6 +93,7 @@ basepath=`pwd`
 
 # Make output dir if doesn't exist
 mkdir -p ${OUTPUT}
+# TODO: Have to avoid changing to directory and do everything from basepath... is it a gromacs limitation?
 cd ${OUTPUT}
 # get indices from pdb file passed as argument for script
 # Note: Sometimes the f**king column number changes... 
