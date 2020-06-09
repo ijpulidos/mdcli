@@ -9,16 +9,19 @@ channels).
 
 ### Adding conda channels
 
-Add `salilab` conda channel to install `Modeller` which is a required tool, as follows:
+Add `salilab` conda channel to install `Modeller` which is a required tool and
+`schrodinger` channel for `pymol` (as a python lib), as follows:
 
 ```bash
 conda config --add channels salilab
+conda config --add channels schrodinger
 ```
 
 ### Building environment from file
 
-The `environment.yml` file allows to build an anaconda environment that will be named `mdcli-env`
-by default, with all the required packages. To build it just use:
+The `environment.yml` file allows to build an anaconda environment that will be
+named `mdcli-env` by default, with all the required packages. To build it just
+use:
 
 ```bash
 conda env create -f environment.yml
