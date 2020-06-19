@@ -3,8 +3,8 @@
 """
 Script that completes a PDB structure with missing residues or atoms.
 
-It uses MODELLER as backend, it automatically builds a MODELLER align file and then performs the completion with a
-MODELLER model and its tools.
+It uses MODELLER as backend, it automatically builds a MODELLER align file and
+then performs the completion with a MODELLER model and its tools.
 
 Requires BioPython>=1.74 and Modeller>=9.21.
 """
