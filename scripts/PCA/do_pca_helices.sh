@@ -2,7 +2,6 @@
 
 # This scripts performs the PCA computation and projection, using GROMACS tools, for the
 # first 3 components for all of the domains, using only the helices residues.
-# It assumes there's already a pdb with the helices called helices.pdb
 # Expects command line argument for the directory where the helices.pdb file is located
 
 # Exit on error
@@ -105,5 +104,8 @@ printf "4 & 18\nq\n" | gmx make_ndx -f ${STRUCTURE} -n helices.ndx -o bb_helices
 # compute covariance matrix
 printf "19\n19\nq\n" | gmx covar -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx
 # Analysis of first 3 eigenvalues
-printf "19\n19\nq\n" | gmx anaeig -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx -b 25000 -3d -first 1 -last 3 -extr -nframes 20
+#printf "19\n19\nq\n" | gmx anaeig -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx -b 25000 -3d -first 1 -last 3 -extr -nframes 20
+printf "19\n19\nq\n" | gmx anaeig -s ${STRUCTURE} -f ${TRAJECTORY} -n bb_helices.ndx -3d -first 1 -last 3 -extr -nframes 20
+# Create projection dat files - 3dproj coords only
+grep ATOM 3dproj.pdb | awk ' {printf("%f %f %f\n", $6,$7,$8) } ' > 3dproj.dat
 cd ${basepath}
