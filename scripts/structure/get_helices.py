@@ -20,7 +20,8 @@ def get_helices(
     file. It uses PyMol to select by secondary structure.
 
     :param pdb_path: String with the path for the input (original) PDB file.
-    :param basename: Selection string to be used for naming only (default 'protein').
+    :param basename: Selection string to be used for naming only (default
+                     'protein').
     :param outfile: String to path of output file (default './helices.pdb')
     """
     # Loading pdb file

@@ -4,7 +4,7 @@ Some tools for the analysis and pre/post-processing of molecular dynamics data.
 ## Requirements
 
 It is recommended that you use an anaconda/conda environment, since it would allow to install
-many of the needed libs and tols in an easier way (they are already included in some conda 
+many of the needed libs and tools in an easier way (they are already included in some conda 
 channels).
 
 ### Adding conda channels
@@ -33,7 +33,7 @@ The current capabilities of the tools in this repository are the following.
 ### Completing residues 
 
 The script `complete_residues.py` is a friendly tool that completes a PDB 
-structure with both missing residues and atoms. Example of usage is a folows:
+structure with both missing residues and atoms. Example of usage is as follows:
 
     python complete_residues.py -i /path/to/input/PDB --pdbcode PDBcode
 
@@ -47,4 +47,4 @@ the structure of only the helical residues. Example of its usage is:
 
     python get_helices.py --pdbfile ../../datafiles/conf.pdb -o /tmp/helices.pdb
 
-For example using the `conf.pdb` file in the datafiles as an example.
+For example using the `conf.pdb` file in the datafiles.
