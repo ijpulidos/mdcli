@@ -11,9 +11,7 @@ import pymol
 
 
 def get_helices(
-    pdb_path: str,
-    basename: str = "protein",
-    outfile: str = "./helices.pdb"
+    pdb_path: str, basename: str = "protein", outfile: str = "./helices.pdb"
 ) -> list:
     """
     Function that returns the helices residues indices from a PDB structure
@@ -31,18 +29,15 @@ def get_helices(
     pymol.cmd.delete("all")
     pymol.cmd.load(pdb_path, basename)
     pymol.cmd.select(basename + "_helices", selection="ss H")
-    pymol.cmd.save(
-        filename=f"{outfile}",
-        selection=basename + "_helices"
-        )
+    pymol.cmd.save(filename=f"{outfile}", selection=basename + "_helices")
 
     # Reading residues indices in helices
     # Get fourth (sixth?) column (indices column) from helices pdb
     helices_indices = [
-        int(x.split()[4])
+        int(x.split()[5])
         for x in open(f"{outfile}").readlines()
         if "ATOM" in x.split()[0]
-        ]
+    ]
     return helices_indices
 
 
@@ -53,14 +48,14 @@ if __name__ == "__main__":
         "-pdb",
         type=str,
         help="Input file in PDB format (.pdb).",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--basename",
         type=str,
         help="Name for pymol selection.",
         required=False,
-        default="protein"
+        default="protein",
     )
     parser.add_argument(
         "--output",
@@ -68,15 +63,11 @@ if __name__ == "__main__":
         type=str,
         help="Path for output PDB file.",
         required=False,
-        default="./helices.pdb"
+        default="./helices.pdb",
     )
     args = parser.parse_args()
 
     # Get helical residues indices
-    res_ids = get_helices(
-        args.pdbfile,
-        basename=args.basename,
-        outfile=args.output
-    )
+    res_ids = get_helices(args.pdbfile, basename=args.basename, outfile=args.output)
     print(f"Helical residues IDs for {args.pdbfile} are:")
     print(res_ids)

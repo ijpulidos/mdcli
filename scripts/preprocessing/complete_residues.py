@@ -22,7 +22,7 @@ import textwrap
 
 # Modules for completing missing residues
 from modeller import *
-from modeller.automodel import *    # Load the automodel class
+from modeller.automodel import *  # Load the automodel class
 
 
 def insert_gap(aaindex, residue_list):
@@ -41,7 +41,7 @@ def get_chain_missing_res(missing_residues, chainID):
     """
     Function that returns a list of missing residues from a given chain identifier/letter.
     """
-    result = [residue for residue in missing_residues if residue['chain'] == chainID]
+    result = [residue for residue in missing_residues if residue["chain"] == chainID]
     return result
 
 
@@ -60,7 +60,9 @@ def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
     structure = pdbparser.get_structure(pdbcode, input_pdb)
     chains = unfold_entities(structure, "C")  # Get chains
 
-    missing_residues = structure.header['missing_residues']  # Get missing residues from whole structure
+    missing_residues = structure.header[
+        "missing_residues"
+    ]  # Get missing residues from whole structure
 
     # Remove alignment file if exists
     try:
@@ -78,9 +80,13 @@ def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
         missing_res_chain = get_chain_missing_res(missing_residues, chain_id)
 
         # Residues with empty id[0] are the 'real' residues, others are solvent or different.
-        residues_list = [(residue.id[1], seq1(residue.resname)) for residue in residues if residue.id[0] == " "]
+        residues_list = [
+            (residue.id[1], seq1(residue.resname))
+            for residue in residues
+            if residue.id[0] == " "
+        ]
         for mis_res in missing_res_chain:
-            insert_gap(mis_res['ssseq'], residues_list)
+            insert_gap(mis_res["ssseq"], residues_list)
 
         # Sequence with gaps
         gapped_seq = "".join(np.array(residues_list)[:, 1])
@@ -107,13 +113,17 @@ def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
     with open(output_align_file, "a+") as file:
         # Writing structure/gapped section
         file.write(">P1;" + structure.id + "\n")
-        file.write("structureX:" + structure.id + ":FIRST:@ END:@" + 5*':.' + "\n")
-        for line in textwrap.wrap(whole_gapped_str+"*", width=75, break_on_hyphens=False):
+        file.write("structureX:" + structure.id + ":FIRST:@ END:@" + 5 * ":." + "\n")
+        for line in textwrap.wrap(
+            whole_gapped_str + "*", width=75, break_on_hyphens=False
+        ):
             file.write("%s\n" % line)
         # Writing full sequence section
         file.write(">P1;" + structure.id + "_fill\n")
-        file.write("sequence:" + structure.id + ":FIRST:@ END:@" + 5*':.' + "\n")
-        for line in textwrap.wrap(whole_full_str+"*", width=75, break_on_hyphens=False):
+        file.write("sequence:" + structure.id + ":FIRST:@ END:@" + 5 * ":." + "\n")
+        for line in textwrap.wrap(
+            whole_full_str + "*", width=75, break_on_hyphens=False
+        ):
             file.write("%s\n" % line)
 
 
@@ -130,25 +140,25 @@ def complete_residues(pdbcode, align_file="protein.ali", loop_ref=False):
     m = model(e, file=pdbcode)
     aln = alignment(e)
     aln.append_model(m, align_codes=pdbcode)
-    aln.write(file=pdbcode + '.seq')
+    aln.write(file=pdbcode + ".seq")
 
     # Completing residues
     log.verbose()
     env = environ()
 
     # directories for input atom files (local dir)
-    env.io.atom_files_directory = ['.']
+    env.io.atom_files_directory = ["."]
 
     if loop_ref is True:
         # For loop refinement - Doesn't always work
-        a = loopmodel(env, alnfile=align_file,
-                      knowns=pdbcode, sequence=code+'_fill')
+        a = loopmodel(env, alnfile=align_file, knowns=pdbcode, sequence=code + "_fill")
         a.loop.starting_model = 1
         a.loop.ending_model = 2
         a.loop.md_level = refine.fast
     else:
-        a = automodel(env, alnfile=align_file,
-                      knowns=pdbcode, sequence=pdbcode + '_fill')
+        a = automodel(
+            env, alnfile=align_file, knowns=pdbcode, sequence=pdbcode + "_fill"
+        )
 
     a.starting_model = 1
     a.ending_model = 1
@@ -158,14 +168,35 @@ def complete_residues(pdbcode, align_file="protein.ali", loop_ref=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Builds alignment file for MODELLER.")
-    parser.add_argument('--input', '-i', type=str, help='Input PDB file with missing residues.', required=True)
-    parser.add_argument('--pdbcode', type=str, help='PDB code identifier for the structure.',
-                        required=True)
-    parser.add_argument('--output', '-o', type=str, help='(Optional) Output align (.ali) file for completing residues.',
-                        required=False, default="protein.ali")
-    parser.add_argument('--loop_ref', '-lr', dest='loop_ref', help='(Optional) Enables loop refinement. '
-                                                             'Does not always work.',
-                        required=False, action='store_true')
+    parser.add_argument(
+        "--input",
+        "-i",
+        type=str,
+        help="Input PDB file with missing residues.",
+        required=True,
+    )
+    parser.add_argument(
+        "--pdbcode",
+        type=str,
+        help="PDB code identifier for the structure.",
+        required=True,
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        help="(Optional) Output align (.ali) file for completing residues.",
+        required=False,
+        default="protein.ali",
+    )
+    parser.add_argument(
+        "--loop_ref",
+        "-lr",
+        dest="loop_ref",
+        help="(Optional) Enables loop refinement. " "Does not always work.",
+        required=False,
+        action="store_true",
+    )
     parser.set_defaults(feature=True)
 
     args = parser.parse_args()
@@ -176,8 +207,11 @@ if __name__ == "__main__":
     print("input: " + os.path.abspath(args.input))
     print("cwd: " + os.getcwd() + code + ".pdb")
     if os.path.abspath(args.input) == os.getcwd() + "/" + code + ".pdb":
-        raise ValueError('Input file comes from current working directory and cannot have ' + code +
-                         '.pdb already as a name. Please change the name (or location) of input PDB file.')
+        raise ValueError(
+            "Input file comes from current working directory and cannot have "
+            + code
+            + ".pdb already as a name. Please change the name (or location) of input PDB file."
+        )
     else:
         shutil.copy(pdb_path, "./" + code + ".pdb")
 
