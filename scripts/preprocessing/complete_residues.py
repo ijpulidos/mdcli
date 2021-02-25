@@ -12,6 +12,7 @@ Requires BioPython>=1.74 and Modeller>=9.21.
 import os
 import argparse
 import shutil
+import warnings
 
 # Modules to read PDB and build align file
 from Bio.PDB import PDBParser
@@ -89,7 +90,15 @@ def build_align_file(input_pdb, pdbcode, output_align_file="protein.ali"):
             insert_gap(mis_res["ssseq"], residues_list)
 
         # Sequence with gaps
-        gapped_seq = "".join(np.array(residues_list)[:, 1])
+        try:
+            gapped_seq = "".join(np.array(residues_list)[:, 1])
+        except IndexError:
+            # Warn the user if the residues list is empty (probably HETATOMS)
+            msg = "Residues list for chain {} is empty. Check PDB, probably chain is" \
+                  "full of HETATOM type atoms. Leaving chain empty in align " \
+                  "file.".format(chain)
+            warnings.warn(msg)
+            gapped_seq = ""  # Empty seq for chain full of HETATOM or non-standard
         # Make the line width the correct/expected one for modeller align file
         textwrap.wrap(gapped_seq, width=75, break_on_hyphens=False)
 
