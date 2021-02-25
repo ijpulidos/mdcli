@@ -13,6 +13,7 @@ Add `salilab` conda channel to install `Modeller` which is a required tool and
 `schrodinger` channel for `pymol` (as a python lib), as follows:
 
 ```bash
+conda config --add channels conda-forge
 conda config --add channels salilab
 conda config --add channels schrodinger
 ```

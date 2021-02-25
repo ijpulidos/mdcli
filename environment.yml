@@ -90,7 +90,7 @@ dependencies:
   - mkl=2019.3=199
   - mkl_fft=1.0.10=py37ha843d7b_0
   - mkl_random=1.0.2=py37hd81dba3_0
-  - modeller=9.24=py37_1
+  - modeller=9.25=py37_1
   - mpeg_encode=1=h14c3975_1
   - mtz2ccp4_px=1.0=h9ac9557_3
   - nbconvert=5.4.1=py_2
